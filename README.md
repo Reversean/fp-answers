@@ -233,6 +233,948 @@ Haskell является языком с ленивым исполнением.
 
 Логические операции `&&` и `||` также являются ленивыми.
 
+# 10. Язык Haskell. Синтаксис объявления и определения функций и переменных. Встроенные выражения. Префиксная и инфиксная запись
+
+Объявление функции от 1 аргумента типа `Integer`, и возвращающая значение типа `Integer`:
+
+```haskell
+foo :: Integer -> Integer
+foo x = x + 2
+
+(<@???@>) :: Integer -> Integer
+(<@???@>) x = x + 2
+```
+
+- Имена функций могут состоять из нелитеральных символов (кроме скобок, кавычек и запятых), но тогда нельзя использовать
+  буквы и цифры
+- Имена функций не могут начинаться с двоеточия
+- Имена функций из литеральных символов должны начинаться с маленькой буквы
+
+Объявление констант (функция от 0 аргумента):
+
+```haskell
+bar :: Int
+bar = 1
+```
+
+Привязывания:
+
+```haskell
+strfact sx =
+    let param = read sx in
+    show (factorial param)
+    
+strfact sx =
+    let param = read sx in
+    show result
+    where result = factorial param
+```
+
+- Привязывания могут иметь параметры
+- Переносы и отступы важны
+- Можно использовать фигурные скобки и ';'
+
+Вызов функций от 2 аргументов в инфиксной форме:
+
+```haskell
+divmod x y = (div x y, mod x y)
+z = 45 `divmod` 16
+
+(</@%>) x y = (div x y, mod x y)
+z = 45 </@%> 16
+```
+
+- Для обычных функций: в обратных кавычках
+- Для операторных функций: просто убираем скобки
+
+# 11. Язык Haskell. Приоритет и ассоциативность операций. Каррирование и секции.
+
+Для инфиксной формы важны ассоциативность операции и её приоритет
+
+- Ассоциативность:
+    - Левая: a + b + c === (a + b) + c
+    - Правая: a += b += c === a += (b += c)
+    - Никакая: операции нельзя использовать в цепочке
+- Приоритет: a + b * c === a + (b * c)
+
+Ассоциативность задается явно вручную:
+
+```haskell
+infixr 7 </@%>  -- правоассоциативен, приоритет 7
+infixl 7 </@%>  -- левоассоциативен, приоритет 7
+```
+
+- Значение приоритета может быть от 0 до 9
+- Приоритет функции в префиксной формы равно 10
+
+Каррирование дает возможность представить функцию от N аргументов в виде функции от 1 аргумента, возвращающей функцию от
+N - 1 аргумента.
+
+Секции позволяют частично применять инфиксные операторы:
+
+```haskell
+let divBy3 = (/ 3) in
+divBy3 15          -- 5
+let div15By = (15 /) in
+div15By 5          -- 3
+```
+
+# 12. Язык Haskell. Встроенные типы данных.
+
+### Базовые типы данных
+
+```haskell
+char :: Char
+char = 'a'
+
+integer :: Integer
+integer = 42
+
+int :: Int
+int = 42
+
+double :: Double
+double = 3.14
+```
+
+### Линейные односвязные списки
+
+Линейные односвязные списки в haskell - основная структура данных:
+
+```haskell
+lst :: [Int]
+lst = 0 : (1 : (2 : (3 : (4 : []))))
+lst = 0 : 1 : 2 : 3 : 4 : []
+lst = [1, 2, 3, 4]
+lst = [1..4]
+lst = [1,2..4]
+```
+
+### Кортежи
+
+```haskell
+pair :: a -> b -> (a, b)
+pair x y = (x, y)
+triple :: a -> b -> c -> (a, b, c)
+triple x y z = (x, y, z)
+```
+
+### Unit (пустой тип)
+
+```haskell
+nothing :: ()
+nothing = ()
+```
+
+### Bool
+
+```haskell
+data Bool = True | False
+```
+
+### Maybe
+
+```haskell
+data Maybe a = Just a | Nothing
+maybeInt1 :: Maybe Int
+maybeInt1 = Just 42
+maybeInt2 :: Maybe Int
+maybeInt2 = Nothing
+```
+
+### Either
+
+```haskell
+data Either a b = Left a | Right b
+eitherStringOrInt1 :: Either String Integer
+eitherStringOrInt1 = Left "Hello"
+eitherStringOrInt2 :: Either String Integer
+eitherStringOrInt2 = Right 1337
+```
+
+# 13. Язык Haskell. Пользовательские типы данных.
+
+## Пользовательские типы данных
+
+Все типы, конструкторы и шаблоны должны начинаться с большой буквы.
+
+### Псевдонимы типов:
+
+```haskell
+type IntList = [Int]
+
+type String = [Char]
+foo :: [Char]
+foo = "hello"
+```
+
+### Типы-произведения (product types)
+
+```haskell
+data Coordinates = Coordinates Int Int
+
+x (Coordinates x' _) = x'
+y (Coordinates _ y') = y'
+c = Coordinates 1 4
+```
+
+### Типы-суммы (sum types)
+
+```haskell
+data Bool = True | False
+
+data Term = IntConstant Int
+          | Variable String
+          | BinaryTerm Term Term
+```
+
+- Каждый конструктор является функцией.
+
+### Записи (records)
+
+```haskell
+data Coordinates = Coordinates{ x :: Int, y :: Int }
+
+data Term = IntConstant{ intValue :: Int }
+          | Variable{ varName :: String }
+          | BinaryTerm{ lhv :: Term, rhv :: Term }
+```
+
+- Каждое имя поля в типе `T` с типом `X` генерирует функцию-геттер с типом `T -> X`
+
+### Newtype
+
+```haskell
+newtype TimeData = TimeData{ ms :: Integer }
+```
+
+- Годится для типов с одним полем
+- Является новым типом, но компилятор представит его также, как и тип, который в нем содержится
+
+### Параметризованные типы
+
+```haskell
+type List a = [a]
+data Tree a = Leaf a | Node (Tree a) (Tree a)
+leaf42 :: Tree Int
+leaf42 = Leaf 42
+```
+
+- Типовые переменные начинаются с маленькой буквы
+
+### Операторные конструкторы
+
+```haskell
+data MyList a = (:~) a (MyList a)
+              | Nil deriving (Show, Eq)
+infixr 4 :~
+
+lst = 2 :~ 3 :~ 4 :~ 5 :~ 6 :~ Nil
+```
+
+- Операторные типы, операторные конструкторы, операторные шаблоны начинаются с двоеточия
+
+## Функций над типами данных
+
+```haskell
+data Tree a = Leaf a | Node (Tree a) (Tree a)
+
+contains (Leaf x) y = (x == y)
+contains (Node left right) y =
+    contains left y || contains right y
+    
+listContains [] x = False
+listContains (h: t) x = if h == x
+                        then True
+                        else listContains t x
+listEmpty [] = True
+listEmpty _ = False
+```
+
+# 14. Язык Haskell. Pattern matching.
+
+Паттерны нужны для:
+
+- проверки применимости функции к аргументу
+- разбор аргумента на части
+
+Каждое объявление функции с новым паттерном обходится в порядке объявления
+
+**Общее правило:** сначала частные случаи, потом всё остальное
+
+```haskell
+foo x = x + 2
+  --^ это паттерн
+
+factorial 0 = 1
+factorial 1 = 1
+factorial n = n * factorial (n - 1)
+```
+
+## Pattern matching в haskell
+
+### Переменная
+
+```haskell
+foo x = x + 2
+```
+
+### Игнорирование
+
+```haskell
+bar _ = 5
+```
+
+### Константа
+
+```haskell
+fee 3 5 = 15
+```
+
+### Комбинации
+
+```haskell
+fuu x y _ 4 = x + y
+```
+
+### Списки
+
+```haskell
+len [] = 0
+len (h:t) = 1 + len t
+```
+
+### Кортежи
+
+```haskell
+pair a b = (a,b)
+first (a,b) = a
+second (a,b) = b
+```
+
+### Пользовательские типы
+
+```haskell
+data Maybe a = Nothing | Just a
+isEmpty (Just _) = False
+isEmpty (Nothing) = True
+
+plus (Just x) (Just y) = Just(x + y)
+plus Nothing _ = Nothing
+plus _ Nothing = Nothing
+```
+
+### Записи
+
+```haskell
+data Coords = Coords { x::Int, y::Int }
+xUnit Coords { x = x } = Coords x 0
+isAtXAxis Coords { y = 0 } = True
+isAtXAxis _ = False
+```
+
+### let
+
+```haskell
+elementOr42 x =
+    if isEmpty x
+    then 42
+    else
+        let (Just y) = x in
+        y
+```
+
+### case ... of
+
+```haskell
+x = case <expression> of <pattern> -> <value>
+                         <pattern> -> <value>
+                         ...
+```
+
+```haskell
+data Either a b = Left a | Right b
+bothToString ei =
+    case ei of
+         (Left x) -> show x
+         (Right x) -> show x
+```
+
+### Pattern guards
+
+Можно вставлять проверки условий, при которых паттерн подходит
+
+```haskell
+function <pattern> | <condition> = <body>
+                   | <other condition> = <body>
+                   | otherwise = <body>
+```
+
+```haskell
+data BinaryTree = EmptyTree
+                | Leaf Integer
+                | Node Integer BinaryTree BinaryTree
+containsElement EmptyTree _ = False
+containsElement (Leaf x) y | (x == y) = True
+                           | otherwise = False
+containsElement (Node c l r) y | (c == y) = True
+                               | (c < y) = containsElement l y
+                               | (c > y) = containsElement r y
+```
+
+- `otherwise` - это `True`
+
+### Объединение паттернов
+
+```haskell
+-- Из списка Maybe найти первый элемент,
+-- содержащий значение
+firstJust (Just x : _) = x
+firstJust (Nothing: t) = firstJust t
+firstJust []           = error "Not found"
+```
+
+```haskell
+data Term = Constant Integer
+          | Variable String
+          | SumTerm Term Term
+simplify (SumTerm (Constant x) (Constant y)) = Constant (x + y)
+simplify (SumTerm x            (Constant 0)) = simplify x
+simplify (SumTerm (Constant 0) x)            = simplify x
+simplify x                                   = x
+```
+
+```haskell
+data Line = Line { start::Coords, end::Coords }
+isVertical Line {
+              start = Coords{x = x1},
+              end = Coords{x = x2}
+           } | x1 == x2 = True
+isVertical _ = False
+```
+
+### as-patterns
+
+Применение нескольких паттернов к одному выражению
+
+```haskell
+-- Если список начинается с 0,
+-- вернуть его, иначе добавить 0
+addZeroToHead list @ (0 : _) = list
+addZeroToHead list = 0 : list
+```
+
+### Strict pattern matching
+
+```haskell
+func !x = x -- всегда вычисляет x
+```
+
+### Lazy pattern matching
+
+```haskell
+func ~(h:t) = h:t    -- не вычисляет h и t, даже если список пустой
+```
+
+## Расширения pattern matching
+
+### -XViewPatterns
+
+Позволяет использовать как паттерн любую функцию
+
+```haskell
+startsWithTwo :: Int -> Int
+startsWithTwo (show -> ('2':_)) = True
+startsWithTwo _ = False
+```
+
+### -XPatternSynonyms
+
+Вариант 1:
+
+- Позволяет делать свои паттерны на основе имеющихся
+- Рекурсию нельзя
+- Паттерны с пропусками нельзя
+
+```haskell
+pattern MAXINT = 9223372036854775807
+pattern SingletonList x = [x]
+foo (SingletonList x) = x
+foo _ = error ""
+```
+
+Вариант 2:
+
+- Паттерны с пропусками можно
+
+```haskell
+pattern StartsWithA <- 'a' : _
+          where StartsWithA = ['a']
+```
+
+# 15. Функциональные комбинаторы. Назначение и примеры. ФК над списками и функциями.
+
+Функциональные комбинаторы - чистые лямбда-функции, которые ссылаются только на свой аргумент.
+
+Данные функции из области комбинаторики, которая вносит один из базовых принципов ФП.
+
+Таким образом комбинаторика позволяет собирать из простых универсальных функций более сложные.
+
+## Базовые функциональные комбинаторы
+
+### const
+
+```haskell
+const x _ = x
+```
+
+### id
+
+```haskell
+id x = x
+```
+
+### flip
+
+```haskell
+flip f a b = f b a
+```
+
+## Функциональные комбинаторы над функциями
+
+### Y-комбинатор
+
+```haskell
+fix :: (t -> t) -> t
+fix f = f (fix f)
+```
+
+Комбинатор наименьшей неподвижной точки: применяет функцию до тех пор, пока она сама не решит “остановиться”
+
+## Функциональные комбинаторы над списками
+
+### map
+
+Комбинатор над списком `map`: возвращает проекцию списка с применением указанной функции
+
+```haskell
+-- применить функцию к каждому элементу списка,
+-- вернуть список результатов
+map :: (a -> b) -> [a] -> [b]
+map _ [] = []
+map f (h : t) = (f h) : (map f t)
+
+-- то же самое, но на выходе получается набор
+-- списков, объединяем их вместе
+concatMap :: (a -> [b]) -> [a] -> [b]
+concatMap f [] = []
+concatMap f (h : t) = (f h) `append` (concatMap f t)
+```
+
+### filter
+
+Возвращает новый список, содержащий только элементы старого списка, соответствующие предикату
+
+```haskell
+-- 
+filter :: (a -> Bool) -> [a] -> [a]
+filter _ [] = []
+filter p (h:t) | p h = h : ft
+               | otherwise = ft
+              where ft = filter p t
+```
+
+### zip
+
+Объединяет 2 списка в список пар
+
+```haskell
+zip :: [a] -> [b] -> [(a,b)]
+zip (ah: at) (bh: bt) = (ah, bh) : zip at bt
+zip [] [] = []
+```
+
+### take
+
+Взять первые N элементов списка
+
+```haskell
+take :: Integer -> [a] -> [a]
+take 0 _ = []
+take i [] = []
+take i (h: t) = h : take (i-1) t
+```
+
+### drop
+
+Выбросить первые N элементов списка
+
+```haskell
+drop :: Integer -> [a] -> [a]
+drop 0 lst = lst
+drop i [] = []
+drop i (_: t) = drop (i-1) t
+```
+
+### scanl
+
+```haskell
+scanl :: (b -> a -> b) -> b -> [a] -> [b]
+```
+
+### scanr
+
+```haskell
+scanr :: (a -> b -> b) -> b -> [a] -> [b]
+```
+
+### takeWhile
+
+```haskell
+takeWhile :: (a -> Bool) -> [a] -> [a]
+```
+
+### dropWhile
+
+```haskell
+dropWhile :: (a -> Bool) -> [a] -> [a]
+```
+
+### tails
+
+```haskell
+tails :: [a] -> [[a]]
+```
+
+# 16. Функциональные комбинаторы. Назначение и примеры. Свёртки.
+
+## Свертки
+
+Свертки (fold, reduce) - семейство функций высшего порядка для обработки структур данных с целью генерации нового
+значения.
+
+Обычно функция свертки принимает в качестве аргументов функциональный комбинатор и некоторую структуру данных.
+
+### Правая свертка
+
+```haskell
+foldr :: (a -> b -> b) -> b -> [a] -> b
+sum list = foldr (+) 0 list
+```
+
+![foldr.png](images%2Ffoldr.png)
+
+### Левая свертка
+
+```haskell
+foldl :: (b -> a -> b) -> b -> [a] -> b
+sum list = foldl (+) 0 list
+```
+
+![foldl.png](images%2Ffoldl.png)
+
+## Развертки
+
+Развертки - семейство функций для обработки значения с целью генерации некоторой структуры данных.
+
+### Правая развертка
+
+```haskell
+unfoldr :: (b -> Maybe(a, b)) -> b -> [a]
+
+take 5 $ unfoldr (\n -> Just (show n, n + 1)) 0 ["0", "1", "2", "3", "4"]
+```
+
+![unfoldr.png](images%2Funfoldr.png)
+
+# 17. Классы типов в Haskell. Определение и примеры.
+
+Полиморфизм - Возможность одного и того же кода работать с разными типами данных.
+
+Виды полиморфизма в языках:
+
+- Параметрический (один код, любые данные)
+    - Generics/templates/universal types
+- Ad-hoc (разные участки кода для разных данных, но единый способ вызова)
+    - Overloading/type classes
+- Динамический
+    - ...
+
+Классы типов - характерный для Haskell механизм ad-hoc полиморфизма.
+
+Определение класса: `class`
+
+- Набор операций, входящих в класс — это обычные функции, оперирующие значениями типа, который входит в класс
+- Операции могут быть только объявлены (через сигнатуру типа) или реализованы
+- В реализациях операций внутри класса можно использовать только функции, работающие с произвольными типами или
+  объявленные (не обязательно определённые) в этом же классе
+
+Экземпляр класса: `instance`
+
+- Набор операций класса для конкретного (или обобщённого) типа
+- Все операции, которые не были реализованы в классе, должны быть реализованы в экземпляре
+- Операции, которые уже реализованы в классе, можно переписать или не переписывать (тогда будет использоваться функция
+  из класса)
+
+В отличии от overloads, в type class
+
+- операции в классе можно переопределить как угодно, до тех пор, пока типы совпадают
+- У каждого класса есть какие-то неявные законы того, как он должен “работать” (как правило, пишутся в документации)
+
+Пример использования класса типов:
+
+```haskell
+listContains :: (Eq a) => [a] -> a -> Bool
+listContains (h:t) e | h == e = True
+                     | otherwise = listContains t e
+```
+
+Требование наличия экземпляра класса можно предъявлять и внутри классов:
+
+```haskell
+instance (Eq a) => Eq [a] where
+    (ah:at) == (bh:bt) = ah == bh && at == bt
+instance (Eq a, Eq b) => Eq (a,b) where
+    (a1,a2) == (b1,b2) = a1 == b1 && a2 == b2
+```
+
+## Стандартные классы
+
+### Eq
+
+`Eq` — сравнение на равенство
+
+```haskell
+class Eq a where
+    (==) :: a -> a -> Bool
+    (/=) :: a -> a -> Bool
+```
+
+Минимальное определение: `==` или `/=`
+
+Закон: `a == b ⇔ not (a /= b)`
+
+### Ord
+
+`Ord` — сравнения порядка
+
+```haskell
+class Eq a => Ord a where
+    compare :: a -> a -> Ordering
+    (<) :: a -> a -> Bool
+    (<=) :: a -> a -> Bool
+    (>) :: a -> a -> Bool
+    (>=) :: a -> a -> Bool
+    max :: a -> a -> a
+    min :: a -> a -> a
+
+data Ordering = LT | EQ | GT
+```
+
+Минимальное определение: `compare` или `<=`
+
+Законы: очевидны
+
+### Show
+
+`Show` — перевод в строку
+
+```haskell
+type ShowS = String -> String
+class Show a where
+    showsPrec :: Int -> a -> ShowS
+    show :: a -> String
+    showList :: [a] -> ShowS
+```
+
+Минимальное определение: `show` или `showsPrec`
+
+Законы: нет (но неплохо бы, чтобы show и read были совместимы)
+
+### Read
+
+`Read` — чтение из строки
+
+```haskell
+type ReadS a = String -> [(a, String)]
+class Read a where
+    readsPrec :: Int -> ReadS a
+    readList :: ReadS [a]
+    readPrec :: ReadPrec a
+    readListPrec :: ReadPrec [a]
+```
+
+Минимальное определение: `readsPrec` или `readPrec`
+
+Законы: нет (но неплохо бы, чтобы show и read были совместимы)
+
+### Bounded
+
+`Bounded` — наличие минимального/максимального значения
+
+Любая штука, у которой есть максимум и минимум.
+
+```haskell
+class Bounded a where
+minBound :: a
+maxBound :: a
+```
+
+Минимальное определение: `minBound`, `maxBound`
+
+Законы: нет
+
+### Enum
+
+`Enum` - Ограниченная сущность (для оператора (..))
+
+```haskell
+class Enum a where
+    succ :: a -> a
+    pred :: a -> a
+    toEnum :: Int -> a
+    fromEnum :: a -> Int
+    enumFrom :: a -> [a]
+    enumFromThen :: a -> a -> [a]
+    enumFromTo :: a -> a -> [a]
+    enumFromThenTo :: a -> a -> a -> [a]
+```
+
+Минимальное определение: `toEnum`, `fromEnum`
+
+Законы: очевидны
+
+## deriving
+
+Ключевое слово deriving позволяет автоматически реализовывать некоторые классы типов:
+
+- `Eq`
+- `Ord`
+- `Show`
+- `Read`
+- `Bounded`
+- `Enum`
+
+```haskell
+data Coords = Coords{x :: Int, y :: Int}
+    deriving (Eq,Ord,Show,Read)
+```
+
+# 18. Классы типов в Haskell. Моноиды и функторы.
+
+## Моноид
+
+Моноид – это тип, отвечающий двум требованиям:
+
+- Есть нейтральное значение, называемое нулём моноида
+- Есть операция добавления моноида к моноиду
+
+```haskell
+class Semigroup a where
+    (<>) :: a -> a -> a
+class (Semigroup a) => Monoid a where
+    mempty :: a
+    mappend :: a -> a -> a
+    mconcat :: [a] -> a
+```
+
+Основной закон моноида: x \`mappend\` mzero === mzero \`mappend\` x === x
+
+Примеры моноидов в haskell:
+
+- Любой контейнер, который может быть пустым
+- В частности, список, операция `append` и пустой список в качестве нуля
+- `Maybe a`, если `a` — моноид
+- Целые и булевы значения моноидами не являются, потому что нет одного очевидного представления
+
+## Функтор
+
+Функтор - контейнер, к каждому элементу которого можно применить функцию (`fmap`), получив при этом проекцию этого \
+контейнера в виде нового функтора.
+
+```haskell
+class Functor f where
+    fmap :: (a -> b) -> f a -> f b
+    (<$) :: a        -> f b -> f a
+    (<$) = fmap . const
+```
+
+Пример:
+
+```haskell
+data BinaryTree a =
+      EmptyBinaryTree
+    | Leaf a
+    | Node a (BinaryTree a) (BinaryTree a)
+instance Functor BinaryTree where
+    fmap f (EmptyBinaryTree) = EmptyBinaryTree
+    fmap f (Leaf x) = Leaf (f x)
+    fmap f (Node e l r) =
+        Node (f e) (fmap f l) (fmap f r)
+```
+
+```haskell
+(*3) $ 2 -- 6
+(*3) <$> [1,2,3,4,5] -- [3,6,9,12,15]
+(*3) <$> (Just 5) -- Just 15
+```
+
+Закон: fmap id x === x
+
+# 19. Классы типов в Haskell. Численные классы.
+
+### Num
+
+`Num` — числа, арифметические операции; Обобщённое понятие “число”
+
+```haskell
+class Num a where
+    (+), (-), (*) :: a -> a -> a
+    negate :: a -> a
+    abs :: a -> a
+    signum :: a -> a
+    fromInteger :: Integer -> a
+```
+
+Минимальное определение: `(+)`, `(*)`, `abs`, `signum`, `fromInteger`, (`negate` | `(-)`)
+
+Законы: соответствуют арифметическим
+
+### Real
+
+`Real` — действительные числа
+
+```haskell
+-- рациональное число
+data Ratio a = <compiler-dependent>
+type Rational = Ratio Integer
+class (Num a, Ord a) => Real a where
+    toRational :: a -> Rational
+```
+
+Минимальное определение: `toRational`
+
+Законы: нет
+
+### Integral
+
+`Integral` — целые числа
+
+```haskell
+class (Real a, Enum a) => Integral a where
+    quot :: a -> a -> a
+    rem :: a -> a -> a
+    div :: a -> a -> a
+    mod :: a -> a -> a
+    quotRem :: a -> a -> (a, a)
+    divMod :: a -> a -> (a, a)
+    toInteger :: a -> Integer
+```
+
+Минимальное определение: `quotRem`, `toInteger`
+
+Законы: арифметические
+
 # 20. Классы типов в Haskell. Аппликативные функторы, монады
 
 ### Чуть больше про монады
